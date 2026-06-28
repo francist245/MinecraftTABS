@@ -43,6 +43,11 @@ AUDIO = {
 }
 
 
+def play_sfx(name, volume=0.4):
+    # One-shot SFX must auto-destroy or Audio entities pile up over a battle.
+    Audio(AUDIO[name], autoplay=True, volume=volume, auto_destroy=True)
+
+
 # ----------------------------------------------------------------------------
 # Config
 # ----------------------------------------------------------------------------
@@ -353,7 +358,7 @@ class Projectile(Entity):
                 burst((tgt.x, tgt.y, tgt.z), mc(120, 200, 110), 6, 2, 0.4, 0.1)
             elif self.kind == 'sonic':
                 burst((tgt.x, tgt.y, tgt.z), mc(60, 230, 220), 14, 5, 0.4)
-                Audio(AUDIO['sonic'], autoplay=True, volume=0.4)
+                play_sfx('sonic', 0.4)
             elif self.kind == 'wind':
                 burst((tgt.x, tgt.y, tgt.z), mc(220, 240, 255), 10, 4, 0.4)
             else:
@@ -373,6 +378,7 @@ class Projectile(Entity):
 # Unit
 # ----------------------------------------------------------------------------
 units = []
+corpses = []        # dead units still fading out (so reset can clean them)
 
 
 class Unit(Entity):
@@ -404,6 +410,7 @@ class Unit(Entity):
         self.fuse = -1
         self.poison_t = 0
         self.poison_dps = 0
+        self.stun_t = 0
         self.revived = False
         self.proj_h = cfg['band_y']
 
@@ -456,29 +463,39 @@ class Unit(Entity):
         np_.z = clamp(np_.z, -FIELD_D / 2 + 1, FIELD_D / 2 - 1)
         self.animate_position(Vec3(np_.x, self.fly, np_.z), duration=0.18,
                               curve=curve.out_expo)
+        # Brief stun so AI movement doesn't fight the knockback tween.
+        self.stun_t = max(self.stun_t, 0.18)
+
+    def _final_destroy(self):
+        if self in corpses:
+            corpses.remove(self)
+            destroy(self)
 
     def die(self):
         if self.special == 'revive' and not self.revived:
             self.revived = True
             self.hp = self.max_hp
+            self.poison_t = 0
+            self.poison_dps = 0
             burst((self.x, 1, self.z), mc(255, 140, 30), 18, 4)
             self.model_root.blink(mc(255, 140, 30), duration=0.3)
             return
         self.alive = False
         burst((self.x, 1, self.z), self.cfg['parts'][0][6], 16, 4)
-        Audio(AUDIO['death'], autoplay=True, volume=0.3)
+        play_sfx('death', 0.3)
         destroy(self.bar_bg)
         destroy(self.bar)
         self.model_root.animate_rotation((90, self.model_root.rotation_y, 0),
                                          duration=0.4, curve=curve.out_bounce)
         for c in self.model_root.children:
             c.fade_out(duration=1.0, delay=0.4)
-        destroy(self, delay=1.6)
         if self in units:
             units.remove(self)
+        corpses.append(self)
+        invoke(self._final_destroy, delay=1.6)
 
     def explode_now(self):
-        Audio(AUDIO['explode'], autoplay=True, volume=0.5)
+        play_sfx('explode', 0.5)
         burst((self.x, 1, self.z), mc(255, 200, 80), 26, 7, 0.7, 0.25)
         for u in list(units):
             if u.team != self.team and u.alive:
@@ -491,9 +508,10 @@ class Unit(Entity):
         self.alive = False
         destroy(self.bar_bg)
         destroy(self.bar)
-        destroy(self, delay=0.05)
         if self in units:
             units.remove(self)
+        corpses.append(self)
+        invoke(self._final_destroy, delay=0.05)
 
     # -------- per-frame AI --------
     def nearest_enemy(self):
@@ -526,6 +544,11 @@ class Unit(Entity):
             if self.hp <= 0:
                 self.die()
                 return
+
+        if self.stun_t > 0:
+            # Being knocked back: let the tween move us, skip AI this frame.
+            self.stun_t -= dt
+            return
 
         self.atk_timer -= dt
         self.retarget -= dt
@@ -602,10 +625,10 @@ class Unit(Entity):
             Projectile(self, tgt, self.proj_kind)
             snd = 'sonic' if self.proj_kind == 'sonic' else 'bow'
             if self.proj_kind != 'sonic':
-                Audio(AUDIO['bow'], autoplay=True, volume=0.25)
+                play_sfx('bow', 0.25)
         else:
             tgt.take_damage(self.dmg, self)
-            Audio(AUDIO['hit'], autoplay=True, volume=0.25)
+            play_sfx('hit', 0.25)
             if self.kb > 1.2 or self.special in ('knockback', 'dash'):
                 if to.length() > 0.01:
                     tgt.knockback(to.normalized(), self.kb)
@@ -826,12 +849,14 @@ class Game:
             self.hint.text = "Press R to set up a new battle!"
 
     # ---- placement ----
-    def try_place(self):
+    def try_place(self, point=None):
         if self.phase != 'setup':
             return
-        if mouse.hovered_entity != ground_picker or mouse.world_point is None:
-            return
-        p = mouse.world_point
+        if point is None:
+            if mouse.hovered_entity != ground_picker or mouse.world_point is None:
+                return
+            point = mouse.world_point
+        p = point
         # team halves: RED z<0, BLUE z>0
         valid = (p.z < -0.5) if self.team == RED else (p.z > 0.5)
         if not valid:
@@ -845,7 +870,7 @@ class Game:
             return
         Unit(self.selected, self.team, (p.x, 0, p.z))
         self.gold[self.team] -= cost
-        Audio(AUDIO['place'], autoplay=True, volume=0.4)
+        play_sfx('place', 0.4)
         self.refresh_hud()
 
     def flash_hint(self, msg):
@@ -879,7 +904,7 @@ class Game:
             b.enabled = False
         self.start_btn.enabled = False
         self.title.enabled = False
-        Audio(AUDIO['start'], autoplay=True, volume=0.6)
+        play_sfx('start', 0.6)
         self.play_music('battle')
         self.refresh_hud()
 
@@ -889,6 +914,9 @@ class Game:
             destroy(u.bar)
             destroy(u)
         units.clear()
+        for c in list(corpses):
+            corpses.remove(c)
+            destroy(c)
         for p in list(projectiles):
             destroy(p)
         projectiles.clear()
@@ -911,6 +939,13 @@ class Game:
             return
         r = any(u.team == RED and u.alive for u in units)
         b = any(u.team == BLUE and u.alive for u in units)
+        if r and b:
+            # Stalemate guard: if neither side has a unit that can deal
+            # damage (e.g. Allay-only teams), the fight can never resolve.
+            r_dmg = any(u.team == RED and u.alive and u.dmg > 0 for u in units)
+            b_dmg = any(u.team == BLUE and u.alive and u.dmg > 0 for u in units)
+            if not r_dmg and not b_dmg:
+                r = b = False
         if not r or not b:
             self.phase = 'over'
             if r and not b:
@@ -926,7 +961,7 @@ class Game:
                 self.banner.text = "DRAW!"
                 self.banner.color = color.white
             self.banner.enabled = True
-            Audio(AUDIO['win'], autoplay=True, volume=0.6)
+            play_sfx('win', 0.6)
             self.refresh_hud()
 
     # ---- main loop ----

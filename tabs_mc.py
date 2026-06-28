@@ -45,7 +45,13 @@ AUDIO = {
 
 def play_sfx(name, volume=0.4):
     # One-shot SFX must auto-destroy or Audio entities pile up over a battle.
+    if MUTED:
+        return
     Audio(AUDIO[name], autoplay=True, volume=volume, auto_destroy=True)
+
+
+# Set to True by the M key to silence all music and sound effects.
+MUTED = False
 
 
 # ----------------------------------------------------------------------------
@@ -68,6 +74,27 @@ def mca(r, g, b, a):
 
 TEAM_COLOR = {RED: mc(225, 65, 60), BLUE: mc(70, 120, 235)}
 TEAM_NAME = {RED: 'RED', BLUE: 'BLUE'}
+
+HELP_TEXT = """HOW TO PLAY  -  MINECRAFT TABS
+
+GOAL: build an army, then watch it fight the enemy.
+The last side with a unit standing WINS!
+
+1.  You control RED. Your half is the FRONT (red) zone.
+2.  Click a mob button at the bottom to pick a unit (it costs gold).
+3.  Left-click your RED zone to place it. You have 1400 gold.
+4.  Press TAB to switch to BLUE and build the enemy army.
+5.  Press SPACE (or the START BATTLE button) to fight!
+
+CONTROLS
+   Left-click ....  place the selected unit on your half
+   TAB ..........  switch side (RED / BLUE)
+   C ............  clear your side        R ....  reset / new battle
+   Right-drag ...  turn camera            Scroll ..  zoom in / out
+   M ............  mute / unmute music
+   H ............  show / hide this help
+
+Click anywhere  -  or press H  -  to begin!"""
 
 
 # ----------------------------------------------------------------------------
@@ -684,8 +711,8 @@ def build_world():
     # voxel ground
     gx = FIELD_W // 2 + 3
     gz = FIELD_D // 2 + 3
-    grass1 = mc(95, 159, 53)
-    grass2 = mc(108, 172, 60)
+    grass1 = mc(78, 150, 44)
+    grass2 = mc(122, 188, 72)
     dirt = mc(134, 96, 67)
     parent = Entity()
     for x in range(-gx, gx + 1):
@@ -699,9 +726,9 @@ def build_world():
     Entity(model='cube', color=dirt, position=(0, -1.5, 0),
            scale=(2 * gx + 1, 1, 2 * gz + 1))
 
-    # center divider line
-    Entity(model='cube', color=mca(255, 235, 120, 0.5),
-           position=(0, 0.02, 0), scale=(FIELD_W, 0.05, 0.3))
+    # center divider line (bright, so each side is obvious)
+    Entity(model='cube', color=mca(255, 240, 150, 0.95),
+           position=(0, 0.04, 0), scale=(FIELD_W, 0.08, 0.45))
 
     # invisible picker plane
     global ground_picker
@@ -793,15 +820,36 @@ class Game:
             self.music.stop()
             destroy(self.music)
         self.music = Audio(AUDIO[which], loop=True, autoplay=True,
-                           volume=0.45)
+                           volume=0.0 if MUTED else 0.55)
 
     # ---- ui ----
     def _build_ui(self):
         self.title = Text('MINECRAFT  TABS', origin=(0, 0), x=0, y=0.46,
                           scale=1.6, color=color.rgb(1, 1, 1))
-        self.hud = Text('', x=-0.86, y=0.44, scale=1.0)
-        self.hint = Text('', x=-0.86, y=-0.40, scale=0.9,
-                         color=mc(230, 230, 210))
+        # Top-left gold/turn readout (left-aligned so it never clips off-screen).
+        self.hud = Text('', origin=(-0.5, 0), x=-0.82, y=0.46, scale=1.0)
+        # Top-right music indicator.
+        self.audio_lbl = Text('', origin=(0.5, 0), x=0.82, y=0.46, scale=0.9,
+                              color=mc(190, 230, 190))
+        # One short instruction line, centred just above the unit buttons.
+        self.hint = Text('', origin=(0, 0), x=0, y=-0.235, scale=0.85,
+                         color=mc(235, 235, 215))
+
+        # Big labels so it's obvious which half belongs to whom.
+        self.lbl_blue = Text('ENEMY  -  BLUE', origin=(0, 0), x=0, y=0.34,
+                             scale=1.4, color=mc(95, 175, 255))
+        self.lbl_red = Text('YOUR SIDE  -  RED  (place units in front of the line)',
+                            origin=(0, 0), x=0, y=-0.12, scale=1.0,
+                            color=mc(255, 110, 110))
+
+        # Translucent coloured zones painted on each half (setup phase only).
+        self.zone_red = Entity(model='plane', color=mca(255, 60, 60, 0.26),
+                               position=(0, 0.05, -FIELD_D / 4),
+                               scale=(FIELD_W, 1, FIELD_D / 2), double_sided=True)
+        self.zone_blue = Entity(model='plane', color=mca(70, 120, 255, 0.26),
+                                position=(0, 0.05, FIELD_D / 4),
+                                scale=(FIELD_W, 1, FIELD_D / 2), double_sided=True)
+
         self.banner = Text('', origin=(0, 0), x=0, y=0.1, scale=3,
                            color=color.yellow, enabled=False)
 
@@ -822,8 +870,44 @@ class Game:
             self.buttons[kind] = b
         self.start_btn = Button(parent=camera.ui, text='START  BATTLE  (Space)',
                                 color=mc(70, 160, 70), scale=(0.34, 0.07),
-                                position=(0, -0.46),
+                                position=(0, -0.47),
                                 on_click=Func(self.start_battle))
+
+        self._build_help()
+        self._update_audio_label()
+
+    def _build_help(self):
+        # Full-screen dark panel (a Button so it also captures the dismiss click).
+        self.help_bg = Button(parent=camera.ui, model='quad',
+                              color=mca(8, 10, 18, 0.93),
+                              highlight_color=mca(8, 10, 18, 0.93),
+                              pressed_color=mca(8, 10, 18, 0.93),
+                              scale=(2.2, 1.3), z=-1,
+                              on_click=Func(self.toggle_help))
+        self.help_text = Text(parent=camera.ui, text=HELP_TEXT, origin=(0, 0),
+                              x=0, y=0, scale=0.95, z=-1.1,
+                              color=color.white, line_height=1.15)
+        self.help_items = [self.help_bg, self.help_text]
+        self.help_open = True
+
+    def _update_audio_label(self):
+        self.audio_lbl.text = 'Music: OFF  (M)' if MUTED else 'Music: ON  (M)'
+
+    def _set_setup_markers(self, visible):
+        for e in (self.zone_red, self.zone_blue, self.lbl_red, self.lbl_blue):
+            e.enabled = visible
+
+    def toggle_help(self):
+        self.help_open = not self.help_open
+        for e in self.help_items:
+            e.enabled = self.help_open
+
+    def toggle_mute(self):
+        global MUTED
+        MUTED = not MUTED
+        if self.music:
+            self.music.volume = 0.0 if MUTED else 0.55
+        self._update_audio_label()
 
     def select(self, kind):
         self.selected = kind
@@ -838,15 +922,16 @@ class Game:
         self.hud.color = TEAM_COLOR[self.team]
         if self.phase == 'setup':
             sel = MOBS[self.selected]
-            self.hint.text = (f"Selected: {sel['name']} ({sel['cost']}g) - {sel['desc']}\n"
-                              f"Left-click YOUR half to place | TAB switch team | "
-                              f"C clear | Right-drag camera | SPACE start")
+            side = 'RED (front)' if self.team == RED else 'BLUE (back)'
+            self.hint.text = (f"Selected: {sel['name']} ({sel['cost']}g) - {sel['desc']}    "
+                              f"Click your {side} half to place.   "
+                              f"[TAB] switch  [C] clear  [H] help")
         elif self.phase == 'battle':
             r = sum(1 for u in units if u.team == RED and u.alive)
             b = sum(1 for u in units if u.team == BLUE and u.alive)
-            self.hint.text = f"BATTLE!  Red: {r}   Blue: {b}   (R = reset)"
+            self.hint.text = f"BATTLE!   Red: {r}    Blue: {b}     [R] reset   [M] music"
         else:
-            self.hint.text = "Press R to set up a new battle!"
+            self.hint.text = "Press R to play again!     [H] help"
 
     # ---- placement ----
     def try_place(self, point=None):
@@ -904,6 +989,7 @@ class Game:
             b.enabled = False
         self.start_btn.enabled = False
         self.title.enabled = False
+        self._set_setup_markers(False)
         play_sfx('start', 0.6)
         self.play_music('battle')
         self.refresh_hud()
@@ -928,6 +1014,7 @@ class Game:
         self.winner = None
         self.banner.enabled = False
         self.title.enabled = True
+        self._set_setup_markers(True)
         for b in self.buttons.values():
             b.enabled = True
         self.start_btn.enabled = True
@@ -979,7 +1066,17 @@ class Game:
             u.update_bar()
 
     def input(self, key):
-        if key == 'tab':
+        # While the help overlay is open, keys just close it (clicks are
+        # handled by the overlay button itself).
+        if self.help_open:
+            if key in ('space', 'enter', 'escape', 'h'):
+                self.toggle_help()
+            return
+        if key == 'h':
+            self.toggle_help()
+        elif key == 'm':
+            self.toggle_mute()
+        elif key == 'tab':
             self.team = BLUE if self.team == RED else RED
             self.refresh_hud()
         elif key == 'space':
@@ -1000,11 +1097,20 @@ class Game:
 # ----------------------------------------------------------------------------
 # Boot
 # ----------------------------------------------------------------------------
+# Panda3D's audio library defaults to 'null' (completely silent). We must
+# pick a real audio backend BEFORE Ursina starts, or no sound is ever heard.
+from panda3d.core import loadPrcFileData  # noqa: E402
+loadPrcFileData('', 'audio-library-name p3openal_audio')
+
 app = Ursina(title='Minecraft TABS', borderless=False, fullscreen=False,
              size=(1280, 760), vsync=True)
 application.asset_folder = Path(APP_DIR)
 window.color = mc(135, 200, 245)
-window.fps_counter.enabled = False
+# Hide Ursina's developer overlays (fps / entity / collider counters).
+for _counter in ('fps_counter', 'entity_counter', 'collider_counter'):
+    _ovl = getattr(window, _counter, None)
+    if _ovl is not None:
+        _ovl.enabled = False
 window.exit_button.visible = False
 
 Sky(color=mc(140, 200, 245))

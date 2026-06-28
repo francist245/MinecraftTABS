@@ -1119,11 +1119,51 @@ AmbientLight(color=color.rgba(180, 180, 190, 255))
 
 build_world()
 
-# camera
-ed = EditorCamera(rotation=(38, 0, 0))
-camera.world_position = (0, 24, -30)
-camera.fov = 55
-ed.target_z = 0
+# camera  -- simple, reliable orbit rig (right-drag = turn, scroll = zoom)
+class BattleCam(Entity):
+    """Third-person orbit camera around the battlefield centre.
+
+    The rig sits at the field centre; the real camera is parented behind it.
+    Right-drag turns the view, the mouse wheel zooms in/out (clamped so you
+    can always pull back far enough to see your whole side for placing units).
+    """
+
+    def __init__(self):
+        super().__init__(position=(0, 1.5, 0))
+        self.yaw = 0.0
+        self.pitch = 54.0          # tilt looking down at the field
+        self.dist = 50.0           # start pulled back: whole field visible
+        self.min_dist = 20.0       # closest zoom
+        self.max_dist = 85.0       # furthest zoom (full overview)
+        camera.parent = self
+        camera.rotation = (0, 0, 0)
+        camera.fov = 60
+        self._apply()
+
+    def _apply(self):
+        self.rotation_x = self.pitch
+        self.rotation_y = self.yaw
+        camera.position = (0, 0, -self.dist)
+
+    def update(self):
+        if held_keys['right mouse']:
+            self.yaw += mouse.velocity[0] * 140
+            self.pitch = clamp(self.pitch - mouse.velocity[1] * 140, 20, 82)
+            self._apply()
+
+    def input(self, key):
+        if key == 'scroll up':
+            self.dist = clamp(self.dist - 5, self.min_dist, self.max_dist)
+            self._apply()
+        elif key == 'scroll down':
+            self.dist = clamp(self.dist + 5, self.min_dist, self.max_dist)
+            self._apply()
+        elif key == 'r' and held_keys['shift']:   # shift+R recenters the view
+            self.yaw, self.pitch, self.dist = 0.0, 54.0, 50.0
+            self._apply()
+
+
+battle_cam = BattleCam()
 
 GAME = Game()
 

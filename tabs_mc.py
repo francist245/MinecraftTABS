@@ -106,12 +106,14 @@ def humanoid(skin, shirt, legs, head=None, arm_fwd=False, arm=None):
     arm = arm or shirt
     az = 0.28 if arm_fwd else 0.0
     ay = 0.95 if arm_fwd else 0.9
+    # The optional 8th element tags a part as an animatable limb so the
+    # engine can swing arms/legs while the mob walks and attacks.
     return [
-        (-0.13, 0.3, 0, 0.22, 0.6, 0.24, legs),
-        (0.13, 0.3, 0, 0.22, 0.6, 0.24, legs),
+        (-0.13, 0.3, 0, 0.22, 0.6, 0.24, legs, 'leg_l'),
+        (0.13, 0.3, 0, 0.22, 0.6, 0.24, legs, 'leg_r'),
         (0, 0.9, 0, 0.5, 0.66, 0.27, shirt),
-        (-0.34, ay, az, 0.18, 0.62, 0.2, arm),
-        (0.34, ay, az, 0.18, 0.62, 0.2, arm),
+        (-0.34, ay, az, 0.18, 0.62, 0.2, arm, 'arm_l'),
+        (0.34, ay, az, 0.18, 0.62, 0.2, arm, 'arm_r'),
         (0, 1.45, 0, 0.5, 0.5, 0.5, head),
     ]
 
@@ -299,9 +301,181 @@ MOBS = {
            (-0.18, 1.78, 0.1, 0.12, 0.2, 0.12, mc(110, 170, 110)),
            (0.2, 1.75, -0.1, 0.1, 0.18, 0.1, mc(110, 170, 110)),
            (0.42, 0.95, 0.1, 0.08, 0.9, 0.08, mc(120, 90, 50))]),
+
+    # ---------------- MORE mobs (v2 — Toby wanted MOOOORE!) ----------------
+    'spider': dict(
+        name='Spider', cost=90, hp=95, dmg=16, rng=1.2, speed=4.0, cd=0.6,
+        ranged=False, special=None, band_y=0.55, key='D',
+        desc='Fast creepy swarm',
+        parts=[
+            (0, 0.42, -0.12, 0.62, 0.4, 0.55, mc(52, 40, 40)),
+            (0, 0.46, 0.42, 0.42, 0.36, 0.42, mc(64, 50, 50)),
+            (-0.12, 0.55, 0.64, 0.08, 0.08, 0.05, mc(225, 45, 45)),
+            (0.12, 0.55, 0.64, 0.08, 0.08, 0.05, mc(225, 45, 45)),
+            (-0.46, 0.3, 0.2, 0.5, 0.06, 0.06, mc(34, 26, 26), 'arm_l'),
+            (0.46, 0.3, 0.2, 0.5, 0.06, 0.06, mc(34, 26, 26), 'arm_r'),
+            (-0.46, 0.3, 0.0, 0.5, 0.06, 0.06, mc(34, 26, 26)),
+            (0.46, 0.3, 0.0, 0.5, 0.06, 0.06, mc(34, 26, 26)),
+            (-0.46, 0.3, -0.2, 0.5, 0.06, 0.06, mc(34, 26, 26), 'leg_l'),
+            (0.46, 0.3, -0.2, 0.5, 0.06, 0.06, mc(34, 26, 26), 'leg_r'),
+            (-0.46, 0.3, -0.4, 0.5, 0.06, 0.06, mc(34, 26, 26)),
+            (0.46, 0.3, -0.4, 0.5, 0.06, 0.06, mc(34, 26, 26)),
+        ]),
+    'enderman': dict(
+        name='Enderman', cost=230, hp=300, dmg=46, rng=1.6, speed=3.0, cd=1.0,
+        ranged=False, special='teleport', band_y=1.7, key='N',
+        desc='Teleports & strikes hard',
+        parts=[
+            (-0.12, 0.7, 0, 0.14, 1.4, 0.16, mc(18, 18, 26), 'leg_l'),
+            (0.12, 0.7, 0, 0.14, 1.4, 0.16, mc(18, 18, 26), 'leg_r'),
+            (0, 1.75, 0, 0.34, 0.8, 0.24, mc(14, 14, 20)),
+            (-0.26, 1.75, 0, 0.1, 1.3, 0.12, mc(20, 20, 28), 'arm_l'),
+            (0.26, 1.75, 0, 0.1, 1.3, 0.12, mc(20, 20, 28), 'arm_r'),
+            (0, 2.5, 0, 0.34, 0.42, 0.34, mc(22, 22, 30)),
+            (-0.08, 2.52, 0.18, 0.1, 0.06, 0.04, mc(205, 125, 255)),
+            (0.08, 2.52, 0.18, 0.1, 0.06, 0.04, mc(205, 125, 255)),
+        ]),
+    'blaze': dict(
+        name='Blaze', cost=200, hp=110, dmg=24, rng=9, speed=2.6, cd=0.9,
+        ranged=True, proj='fire', special=None, band_y=1.2, key='B', fly=1.6,
+        desc='Flies, throws fire (burns!)',
+        parts=[
+            (0, 1.2, 0, 0.42, 0.5, 0.42, mc(255, 205, 60)),
+            (0, 1.5, 0, 0.3, 0.3, 0.3, mc(70, 60, 50)),
+            (-0.06, 1.52, 0.16, 0.06, 0.06, 0.04, mc(255, 90, 40)),
+            (0.06, 1.52, 0.16, 0.06, 0.06, 0.04, mc(255, 90, 40)),
+            (0, 1.65, 0.3, 0.08, 0.5, 0.08, mc(250, 175, 40)),
+            (0, 0.75, 0.3, 0.08, 0.5, 0.08, mc(250, 175, 40)),
+            (0.3, 1.2, 0, 0.08, 0.5, 0.08, mc(250, 175, 40)),
+            (-0.3, 1.2, 0, 0.08, 0.5, 0.08, mc(250, 175, 40)),
+            (0, 1.65, -0.3, 0.08, 0.5, 0.08, mc(250, 175, 40)),
+            (0, 0.75, -0.3, 0.08, 0.5, 0.08, mc(250, 175, 40)),
+        ]),
+    'ghast': dict(
+        name='Ghast', cost=360, hp=240, dmg=64, rng=13, speed=1.4, cd=2.0,
+        ranged=True, proj='fire', special=None, band_y=1.8, key='G', fly=2.2,
+        desc='Huge floating fireball lobber',
+        parts=[
+            (0, 2.0, 0, 1.4, 1.4, 1.4, mc(228, 228, 232)),
+            (-0.3, 2.2, 0.72, 0.18, 0.12, 0.04, mc(205, 45, 45)),
+            (0.3, 2.2, 0.72, 0.18, 0.12, 0.04, mc(205, 45, 45)),
+            (0, 1.7, 0.72, 0.5, 0.16, 0.04, mc(180, 40, 40)),
+            (-0.5, 1.0, 0.3, 0.16, 1.0, 0.16, mc(212, 212, 216)),
+            (-0.2, 0.9, 0.3, 0.16, 1.2, 0.16, mc(212, 212, 216)),
+            (0.2, 0.9, 0.3, 0.16, 1.2, 0.16, mc(212, 212, 216)),
+            (0.5, 1.0, 0.3, 0.16, 1.0, 0.16, mc(212, 212, 216)),
+            (-0.35, 0.95, -0.3, 0.16, 1.1, 0.16, mc(212, 212, 216)),
+            (0.35, 0.95, -0.3, 0.16, 1.1, 0.16, mc(212, 212, 216)),
+        ]),
+    'slime': dict(
+        name='Slime', cost=130, hp=200, dmg=24, rng=1.4, speed=2.2, cd=0.9,
+        ranged=False, special='split', band_y=0.7, key='S',
+        desc='Bounces; SPLITS when it dies',
+        parts=[
+            (0, 0.5, 0, 0.9, 0.9, 0.9, mca(110, 210, 110, 0.7)),
+            (0, 0.5, 0, 0.6, 0.6, 0.6, mca(80, 180, 80, 0.55)),
+            (-0.18, 0.6, 0.46, 0.08, 0.08, 0.04, mc(20, 40, 20)),
+            (0.18, 0.6, 0.46, 0.08, 0.08, 0.04, mc(20, 40, 20)),
+            (0, 0.4, 0.46, 0.2, 0.06, 0.04, mc(20, 40, 20)),
+        ]),
+    'slime_small': dict(
+        name='Slimelet', cost=0, hp=70, dmg=12, rng=1.2, speed=2.7, cd=0.8,
+        ranged=False, special='hop', band_y=0.4, key='', buyable=False,
+        scale=0.6, desc='Tiny split-off slime',
+        parts=[
+            (0, 0.5, 0, 0.9, 0.9, 0.9, mca(120, 220, 120, 0.7)),
+            (-0.18, 0.6, 0.46, 0.08, 0.08, 0.04, mc(20, 40, 20)),
+            (0.18, 0.6, 0.46, 0.08, 0.08, 0.04, mc(20, 40, 20)),
+        ]),
+    'vindicator': dict(
+        name='Vindicator', cost=170, hp=200, dmg=40, rng=1.4, speed=2.8, cd=0.8,
+        ranged=False, special=None, band_y=0.9, key='V',
+        desc='Axe-swinging berserker',
+        parts=humanoid(mc(150, 150, 150), mc(60, 75, 70), mc(45, 50, 48),
+                       head=mc(160, 150, 140), arm_fwd=True)
+        + [(0.42, 1.0, 0.3, 0.1, 0.5, 0.1, mc(120, 90, 55)),
+           (0.42, 1.4, 0.42, 0.3, 0.3, 0.06, mc(185, 190, 195))]),
+    'wither_skeleton': dict(
+        name='Wither Skel', cost=180, hp=150, dmg=26, rng=1.4, speed=2.4, cd=0.9,
+        ranged=False, special='wither', band_y=0.9, key='K',
+        desc='Hits inflict WITHER rot',
+        parts=humanoid(mc(40, 42, 40), mc(30, 32, 30), mc(25, 27, 25),
+                       head=mc(46, 48, 46), arm_fwd=True)
+        + [(0.42, 0.9, 0.25, 0.06, 0.75, 0.06, mc(60, 60, 66))]),
+    'witch': dict(
+        name='Witch', cost=220, hp=130, dmg=16, rng=10, speed=1.9, cd=1.4,
+        ranged=True, proj='poison', special='poison', band_y=0.9, key='F',
+        desc='Hurls splash poison potions',
+        parts=humanoid(mc(110, 150, 110), mc(90, 60, 130), mc(60, 45, 90),
+                       head=mc(120, 160, 120))
+        + [(0, 1.75, 0, 0.62, 0.1, 0.62, mc(40, 30, 60)),
+           (0, 2.0, 0, 0.3, 0.5, 0.3, mc(50, 38, 72)),
+           (0, 1.4, 0.32, 0.08, 0.08, 0.18, mc(120, 160, 120))]),
+    'guardian': dict(
+        name='Guardian', cost=210, hp=160, dmg=30, rng=12, speed=1.6, cd=1.3,
+        ranged=True, proj='laser', special=None, band_y=0.9, key='U', fly=0.8,
+        desc='Fires a piercing eye-laser',
+        parts=[
+            (0, 1.0, 0, 0.7, 0.7, 0.7, mc(70, 140, 140)),
+            (0, 1.0, 0.38, 0.3, 0.3, 0.1, mc(240, 180, 90)),
+            (0, 1.0, 0.46, 0.14, 0.14, 0.06, mc(220, 60, 60)),
+            (0, 1.62, 0, 0.12, 0.4, 0.12, mc(60, 120, 120)),
+            (0, 0.4, 0, 0.12, 0.4, 0.12, mc(60, 120, 120)),
+            (0.42, 1.0, 0, 0.4, 0.12, 0.12, mc(60, 120, 120)),
+            (-0.42, 1.0, 0, 0.4, 0.12, 0.12, mc(60, 120, 120)),
+            (0, 1.0, -0.46, 0.1, 0.42, 0.5, mc(65, 130, 130)),
+        ]),
+    'phantom': dict(
+        name='Phantom', cost=160, hp=90, dmg=24, rng=1.6, speed=4.2, cd=0.7,
+        ranged=False, special=None, band_y=1.0, key='P', fly=2.0,
+        desc='Swift flying night-swooper',
+        parts=[
+            (0, 1.0, 0, 0.4, 0.24, 0.7, mc(70, 120, 120)),
+            (0, 1.05, 0.45, 0.3, 0.24, 0.3, mc(80, 135, 135)),
+            (-0.08, 1.1, 0.62, 0.06, 0.06, 0.04, mc(150, 255, 160)),
+            (0.08, 1.1, 0.62, 0.06, 0.06, 0.04, mc(150, 255, 160)),
+            (-0.78, 1.0, 0, 0.9, 0.05, 0.5, mc(60, 110, 110)),
+            (0.78, 1.0, 0, 0.9, 0.05, 0.5, mc(60, 110, 110)),
+            (0, 0.95, -0.5, 0.1, 0.1, 0.4, mc(60, 110, 110)),
+        ]),
+    'ravager': dict(
+        name='Ravager', cost=400, hp=900, dmg=70, rng=2.0, speed=1.6, cd=1.5,
+        ranged=False, special='knockback', band_y=1.4, key='J', kb=3.0,
+        desc='Gigantic charging beast',
+        parts=[
+            (0, 1.0, 0, 1.4, 1.2, 2.2, mc(92, 82, 76)),
+            (0, 1.5, 1.25, 0.95, 0.9, 0.8, mc(82, 72, 68)),
+            (0, 1.05, 1.65, 0.7, 0.42, 0.3, mc(60, 52, 48)),
+            (-0.22, 2.0, 1.3, 0.12, 0.32, 0.12, mc(205, 205, 195)),
+            (0.22, 2.0, 1.3, 0.12, 0.32, 0.12, mc(205, 205, 195)),
+            (-0.18, 1.55, 1.68, 0.1, 0.1, 0.04, mc(225, 60, 40)),
+            (0.18, 1.55, 1.68, 0.1, 0.1, 0.04, mc(225, 60, 40)),
+            (-0.5, 0.4, 0.8, 0.32, 0.8, 0.42, mc(72, 64, 60), 'leg_l'),
+            (0.5, 0.4, 0.8, 0.32, 0.8, 0.42, mc(72, 64, 60), 'leg_r'),
+            (-0.5, 0.4, -0.8, 0.32, 0.8, 0.42, mc(72, 64, 60), 'arm_l'),
+            (0.5, 0.4, -0.8, 0.32, 0.8, 0.42, mc(72, 64, 60), 'arm_r'),
+        ]),
+    'wither': dict(
+        name='Wither', cost=600, hp=1500, dmg=90, rng=15, speed=1.3, cd=1.8,
+        ranged=True, proj='skull', special='boss', band_y=2.0, key='Z', fly=2.4,
+        desc='BOSS: flying 3-headed skull storm',
+        parts=[
+            (0, 2.4, 0, 0.4, 1.2, 0.4, mc(40, 40, 44)),
+            (0, 1.4, 0, 0.3, 0.9, 0.3, mc(38, 38, 42)),
+            (-0.5, 3.0, 0, 0.5, 0.5, 0.5, mc(30, 30, 34)),
+            (0, 3.25, 0, 0.55, 0.55, 0.55, mc(35, 35, 40)),
+            (0.5, 3.0, 0, 0.5, 0.5, 0.5, mc(30, 30, 34)),
+            (-0.5, 3.0, 0.27, 0.34, 0.1, 0.04, mc(225, 60, 50)),
+            (0, 3.25, 0.3, 0.4, 0.12, 0.04, mc(225, 60, 50)),
+            (0.5, 3.0, 0.27, 0.34, 0.1, 0.04, mc(225, 60, 50)),
+            (-0.45, 2.2, 0, 0.42, 0.12, 0.3, mc(46, 46, 52)),
+            (0.45, 2.2, 0, 0.42, 0.12, 0.3, mc(46, 46, 52)),
+            (-0.45, 1.85, 0, 0.42, 0.12, 0.3, mc(46, 46, 52)),
+            (0.45, 1.85, 0, 0.42, 0.12, 0.3, mc(46, 46, 52)),
+        ]),
 }
 
-ROSTER = list(MOBS.keys())
+ROSTER = [k for k, c in MOBS.items() if c.get('buyable', True)]
 
 
 # ----------------------------------------------------------------------------
@@ -361,6 +535,9 @@ class Projectile(Entity):
             'poison': dict(m='cube', c=mc(120, 200, 110), s=(0.1, 0.1, 0.5), spd=20, kb=0.3),
             'wind': dict(m='sphere', c=mca(220, 240, 255, 0.8), s=0.4, spd=16, kb=owner.kb),
             'sonic': dict(m='cube', c=mc(60, 230, 220), s=(0.7, 0.7, 0.7), spd=26, kb=1.6),
+            'fire': dict(m='sphere', c=mc(255, 140, 40), s=0.32, spd=18, kb=0.3),
+            'skull': dict(m='cube', c=mc(35, 35, 40), s=(0.34, 0.34, 0.34), spd=16, kb=0.6),
+            'laser': dict(m='cube', c=mc(120, 240, 235), s=(0.12, 0.12, 0.7), spd=32, kb=0.0),
         }[kind]
         super().__init__(model=cfg['m'], color=cfg['c'], position=start,
                          scale=cfg['s'])
@@ -383,6 +560,14 @@ class Projectile(Entity):
             if self.kind == 'poison':
                 self.target.apply_poison(6, 4)
                 burst((tgt.x, tgt.y, tgt.z), mc(120, 200, 110), 6, 2, 0.4, 0.1)
+            elif self.kind == 'fire':
+                self.target.apply_poison(5, 3)
+                burst((tgt.x, tgt.y, tgt.z), mc(255, 150, 50), 9, 3, 0.4, 0.12)
+            elif self.kind == 'skull':
+                self.target.apply_poison(9, 4)
+                burst((tgt.x, tgt.y, tgt.z), mc(60, 60, 70), 12, 4, 0.5, 0.14)
+            elif self.kind == 'laser':
+                burst((tgt.x, tgt.y, tgt.z), mc(140, 245, 240), 8, 3, 0.3, 0.1)
             elif self.kind == 'sonic':
                 burst((tgt.x, tgt.y, tgt.z), mc(60, 230, 220), 14, 5, 0.4)
                 play_sfx('sonic', 0.4)
@@ -441,23 +626,22 @@ class Unit(Entity):
         self.revived = False
         self.proj_h = cfg['band_y']
 
+        self.walk_phase = random.uniform(0, math.tau)
+        self.limbs = {}
         self.model_root = Entity(parent=self)
         self.model_root.scale = self.scale_mul
         self._build_model()
         self.y = self.fly
-
-        # health bar
-        self.bar_bg = Entity(model='cube', color=color.rgb(0, 0, 0),
-                             scale=(1.1, 0.16, 0.05))
-        self.bar = Entity(model='cube', color=color.lime,
-                          scale=(1.05, 0.12, 0.06))
-        self.bar_h = cfg['band_y'] * self.scale_mul + 1.0 + self.fly
         units.append(self)
 
     def _build_model(self):
         for p in self.cfg['parts']:
-            Entity(parent=self.model_root, model='cube', color=p[6],
-                   position=(p[0], p[1], p[2]), scale=(p[3], p[4], p[5]))
+            e = Entity(parent=self.model_root, model='cube', color=p[6],
+                       position=(p[0], p[1], p[2]), scale=(p[3], p[4], p[5]))
+            # Parts tagged with a limb role (8th element) are animated.
+            if len(p) > 7 and p[7]:
+                e.base_z = p[2]
+                self.limbs[p[7]] = e
         # team band around chest
         by = self.cfg['band_y']
         Entity(parent=self.model_root, model='cube', color=TEAM_COLOR[self.team],
@@ -508,10 +692,16 @@ class Unit(Entity):
             self.model_root.blink(mc(255, 140, 30), duration=0.3)
             return
         self.alive = False
+        # Slimes split into two smaller slimes when they die.
+        if self.special == 'split':
+            for off in ((0.7, 0.0), (-0.7, 0.0)):
+                Unit('slime_small', self.team,
+                     (clamp(self.x + off[0], -FIELD_W / 2 + 1, FIELD_W / 2 - 1),
+                      0,
+                      clamp(self.z + off[1], -FIELD_D / 2 + 1, FIELD_D / 2 - 1)))
+            burst((self.x, 1, self.z), mc(110, 210, 110), 12, 4)
         burst((self.x, 1, self.z), self.cfg['parts'][0][6], 16, 4)
         play_sfx('death', 0.3)
-        destroy(self.bar_bg)
-        destroy(self.bar)
         self.model_root.animate_rotation((90, self.model_root.rotation_y, 0),
                                          duration=0.4, curve=curve.out_bounce)
         for c in self.model_root.children:
@@ -533,8 +723,6 @@ class Unit(Entity):
                     if dirv.length() > 0.01:
                         u.knockback(dirv.normalized(), 3.0)
         self.alive = False
-        destroy(self.bar_bg)
-        destroy(self.bar)
         if self in units:
             units.remove(self)
         corpses.append(self)
@@ -596,6 +784,10 @@ class Unit(Entity):
         if dist > 0.01:
             self.model_root.rotation_y = math.degrees(math.atan2(to.x, to.z))
 
+        # Low-health smoke puffs (a wounded cue now that health bars are gone).
+        if self.hp < self.max_hp * 0.3 and random.random() < 0.045:
+            burst((self.x, self.proj_h, self.z), mc(95, 95, 95), 1, 1, 0.5, 0.07)
+
         speed = self.base_speed
         if self.special == 'roll' and dist > 4:
             speed *= 2.0
@@ -604,6 +796,14 @@ class Unit(Entity):
             speed *= 1.8
 
         if dist > self.rng:
+            # Enderman blinks next to a distant target instead of walking.
+            if self.special == 'teleport' and dist > 5 and random.random() < 0.03:
+                nrm = to.normalized()
+                burst((self.x, self.proj_h, self.z), mc(150, 60, 200), 10, 3)
+                self.x = clamp(tgt.x - nrm.x * 1.2, -FIELD_W / 2 + 1, FIELD_W / 2 - 1)
+                self.z = clamp(tgt.z - nrm.z * 1.2, -FIELD_D / 2 + 1, FIELD_D / 2 - 1)
+                burst((self.x, self.proj_h, self.z), mc(190, 100, 235), 12, 3)
+                return
             # separation from close allies to avoid clumping
             sep = self._separation()
             move = to.normalized() * speed + sep
@@ -611,11 +811,19 @@ class Unit(Entity):
             nx = clamp(self.x + step.x, -FIELD_W / 2 + 1, FIELD_W / 2 - 1)
             nz = clamp(self.z + step.z, -FIELD_D / 2 + 1, FIELD_D / 2 - 1)
             self.x, self.z = nx, nz
-            # walk bob
-            self.model_root.y = abs(math.sin(time.time() * speed * 3)) * 0.08
-            if self.special == 'hop':
+            # walk bob + swinging arms/legs
+            self.walk_phase += speed * dt * 4.0
+            self._animate_limbs(1.0)
+            if self.fly:
+                self.model_root.y = math.sin(time.time() * 3) * 0.14
+            else:
+                self.model_root.y = abs(math.sin(self.walk_phase)) * 0.08
+            if self.special in ('hop', 'split'):     # slimes & breeze bounce
                 self.model_root.y += abs(math.sin(time.time() * 4)) * 0.2
         else:
+            self._animate_limbs(0.0)                  # settle limbs when fighting
+            if self.fly:
+                self.model_root.y = math.sin(time.time() * 3) * 0.14
             if self.special == 'explode':
                 if self.fuse < 0:
                     self.fuse = 0.7
@@ -629,6 +837,15 @@ class Unit(Entity):
             if self.atk_timer <= 0:
                 self._attack(tgt, to)
                 self.atk_timer = self.cd
+
+    def _animate_limbs(self, amount):
+        """Swing tagged arms/legs back and forth (marching motion)."""
+        if not self.limbs:
+            return
+        s = math.sin(self.walk_phase) * 0.22 * amount
+        for name, e in self.limbs.items():
+            sign = 1 if name in ('leg_l', 'arm_r') else -1
+            e.z = e.base_z + s * sign
 
     def _separation(self):
         push = Vec3(0, 0, 0)
@@ -648,14 +865,21 @@ class Unit(Entity):
             curve=curve.out_expo)
         self.model_root.animate_position(
             Vec3(0, self.model_root.y, 0), duration=0.12, delay=0.08)
+        # thrust the arms forward for a melee swing
+        for nm in ('arm_l', 'arm_r'):
+            e = self.limbs.get(nm)
+            if e:
+                e.animate_z(e.base_z + 0.35, duration=0.08, curve=curve.out_expo)
+                e.animate_z(e.base_z, duration=0.14, delay=0.08)
         if self.ranged:
             Projectile(self, tgt, self.proj_kind)
-            snd = 'sonic' if self.proj_kind == 'sonic' else 'bow'
             if self.proj_kind != 'sonic':
                 play_sfx('bow', 0.25)
         else:
             tgt.take_damage(self.dmg, self)
             play_sfx('hit', 0.25)
+            if self.special == 'wither':              # wither skeleton: rot DOT
+                tgt.apply_poison(7, 4)
             if self.kb > 1.2 or self.special in ('knockback', 'dash'):
                 if to.length() > 0.01:
                     tgt.knockback(to.normalized(), self.kb)
@@ -685,19 +909,6 @@ class Unit(Entity):
             ally.model_root.blink(mc(120, 230, 160), duration=0.2)
             burst((ally.x, ally.proj_h, ally.z), mc(150, 240, 180), 5, 2, 0.4, 0.1)
             self.atk_timer = self.cd
-
-    def update_bar(self):
-        if not self.alive:
-            return
-        frac = clamp(self.hp / self.max_hp, 0, 1)
-        self.bar_bg.world_position = self.world_position + Vec3(0, self.bar_h, 0)
-        self.bar.world_position = self.bar_bg.world_position + Vec3(0, 0, -0.01)
-        self.bar.scale_x = 1.05 * frac
-        self.bar.x = self.bar_bg.world_position.x  # keep centered-left handled below
-        self.bar.color = mc(int(255 * (1 - frac)), int(220 * frac + 30), 40)
-        # billboard toward camera
-        self.bar_bg.look_at(camera.world_position)
-        self.bar.look_at(camera.world_position)
 
 
 # ----------------------------------------------------------------------------
@@ -832,7 +1043,7 @@ class Game:
         self.audio_lbl = Text('', origin=(0.5, 0), x=0.82, y=0.46, scale=0.9,
                               color=mc(190, 230, 190))
         # One short instruction line, centred just above the unit buttons.
-        self.hint = Text('', origin=(0, 0), x=0, y=-0.235, scale=0.85,
+        self.hint = Text('', origin=(0, 0), x=0, y=-0.205, scale=0.85,
                          color=mc(235, 235, 215))
 
         # Big labels so it's obvious which half belongs to whom.
@@ -853,24 +1064,24 @@ class Game:
         self.banner = Text('', origin=(0, 0), x=0, y=0.1, scale=3,
                            color=color.yellow, enabled=False)
 
-        # unit buttons along the bottom (two rows)
+        # unit buttons along the bottom (three compact rows for the big roster)
         self.buttons = {}
-        per_row = 8
+        per_row = 9
         for i, kind in enumerate(ROSTER):
             cfg = MOBS[kind]
             row = i // per_row
             col_i = i % per_row
-            bx = -0.78 + col_i * 0.222
-            by = -0.30 - row * 0.085
+            bx = -0.788 + col_i * 0.197
+            by = -0.255 - row * 0.082
             b = Button(parent=camera.ui, text=f"{cfg['name']}\n{cfg['cost']}g",
-                       color=mc(60, 60, 70), scale=(0.2, 0.075),
-                       position=(bx, by), text_size=0.5)
+                       color=mc(60, 60, 70), scale=(0.185, 0.072),
+                       position=(bx, by), text_size=0.42)
             b.kind = kind
             b.on_click = Func(self.select, kind)
             self.buttons[kind] = b
         self.start_btn = Button(parent=camera.ui, text='START  BATTLE  (Space)',
-                                color=mc(70, 160, 70), scale=(0.34, 0.07),
-                                position=(0, -0.47),
+                                color=mc(70, 160, 70), scale=(0.3, 0.062),
+                                position=(0, -0.49),
                                 on_click=Func(self.start_battle))
 
         self._build_help()
@@ -970,8 +1181,6 @@ class Game:
         for u in list(units):
             if u.team == self.team:
                 self.gold[self.team] += MOBS[u.kind]['cost']
-                destroy(u.bar_bg)
-                destroy(u.bar)
                 units.remove(u)
                 destroy(u)
         self.refresh_hud()
@@ -996,8 +1205,6 @@ class Game:
 
     def reset(self):
         for u in list(units):
-            destroy(u.bar_bg)
-            destroy(u.bar)
             destroy(u)
         units.clear()
         for c in list(corpses):
@@ -1062,8 +1269,6 @@ class Game:
                 pr.step(dt)
             self.check_winner()
             self.refresh_hud()
-        for u in units:
-            u.update_bar()
 
     def input(self, key):
         # While the help overlay is open, keys just close it (clicks are
@@ -1089,7 +1294,7 @@ class Game:
             self.try_place()
         else:
             for kind, cfg in MOBS.items():
-                if key == cfg['key'].lower():
+                if cfg['key'] and key == cfg['key'].lower():
                     self.select(kind)
                     break
 

@@ -101,14 +101,15 @@ Click anywhere  -  or press H  -  to begin!"""
 # Mob roster
 # parts: list of (px, py, pz, sx, sy, sz, (r,g,b))  -- feet at y=0
 # ----------------------------------------------------------------------------
-def humanoid(skin, shirt, legs, head=None, arm_fwd=False, arm=None):
+def humanoid(skin, shirt, legs, head=None, arm_fwd=False, arm=None,
+             eyes=mc(40, 32, 30), nose=None, brow=None, pupil=None):
     head = head or skin
     arm = arm or shirt
     az = 0.28 if arm_fwd else 0.0
     ay = 0.95 if arm_fwd else 0.9
     # The optional 8th element tags a part as an animatable limb so the
     # engine can swing arms/legs while the mob walks and attacks.
-    return [
+    parts = [
         (-0.13, 0.3, 0, 0.22, 0.6, 0.24, legs, 'leg_l'),
         (0.13, 0.3, 0, 0.22, 0.6, 0.24, legs, 'leg_r'),
         (0, 0.9, 0, 0.5, 0.66, 0.27, shirt),
@@ -116,6 +117,22 @@ def humanoid(skin, shirt, legs, head=None, arm_fwd=False, arm=None):
         (0.34, ay, az, 0.18, 0.62, 0.2, arm, 'arm_r'),
         (0, 1.45, 0, 0.5, 0.5, 0.5, head),
     ]
+    # ---- face on the +z front of the head (what makes it recognisable) ----
+    if eyes:
+        parts += [
+            (-0.12, 1.5, 0.255, 0.13, 0.11, 0.04, eyes),
+            (0.12, 1.5, 0.255, 0.13, 0.11, 0.04, eyes),
+        ]
+        if pupil:    # bright pupils (skeleton/wither sockets glints)
+            parts += [
+                (-0.12, 1.5, 0.27, 0.05, 0.05, 0.03, pupil),
+                (0.12, 1.5, 0.27, 0.05, 0.05, 0.03, pupil),
+            ]
+    if brow:         # angry illager unibrow ridge
+        parts.append((0, 1.61, 0.255, 0.42, 0.07, 0.04, brow))
+    if nose:         # big drooping illager / witch nose
+        parts.append((0, 1.4, 0.31, 0.13, 0.24, 0.18, nose))
+    return parts
 
 
 MOBS = {
@@ -125,12 +142,14 @@ MOBS = {
         ranged=False, special=None, band_y=0.9, key='1',
         desc='Cheap melee horde',
         parts=humanoid(mc(110, 150, 95), mc(60, 110, 130), mc(60, 70, 130),
-                       head=mc(95, 140, 80), arm_fwd=True)),
+                       head=mc(95, 140, 80), arm_fwd=True,
+                       eyes=mc(28, 44, 34))),
     'skeleton': dict(
         name='Skeleton', cost=110, hp=80, dmg=16, rng=12, speed=1.9, cd=1.3,
         ranged=True, proj='arrow', special=None, band_y=0.9, key='2',
         desc='Bow archer',
-        parts=humanoid(mc(225, 225, 225), mc(200, 200, 200), mc(180, 180, 180))
+        parts=humanoid(mc(225, 225, 225), mc(200, 200, 200), mc(180, 180, 180),
+                       eyes=mc(18, 18, 18))
         + [(0.42, 0.95, 0.1, 0.08, 0.9, 0.08, mc(120, 90, 50))]),
     'creeper': dict(
         name='Creeper', cost=130, hp=90, dmg=120, rng=1.6, speed=2.3, cd=1.0,
@@ -143,9 +162,11 @@ MOBS = {
             (0.15, 0.2, -0.15, 0.22, 0.4, 0.22, mc(70, 150, 70)),
             (0, 0.95, 0, 0.5, 0.9, 0.4, mc(85, 170, 80)),
             (0, 1.6, 0, 0.52, 0.52, 0.52, mc(90, 175, 85)),
-            (-0.12, 1.62, 0.27, 0.12, 0.14, 0.04, mc(20, 30, 20)),
-            (0.12, 1.62, 0.27, 0.12, 0.14, 0.04, mc(20, 30, 20)),
-            (0, 1.45, 0.27, 0.14, 0.22, 0.04, mc(20, 30, 20)),
+            (-0.13, 1.67, 0.27, 0.14, 0.14, 0.04, mc(20, 28, 20)),
+            (0.13, 1.67, 0.27, 0.14, 0.14, 0.04, mc(20, 28, 20)),
+            (0, 1.52, 0.27, 0.14, 0.18, 0.04, mc(20, 28, 20)),
+            (-0.13, 1.43, 0.27, 0.14, 0.14, 0.04, mc(20, 28, 20)),
+            (0.13, 1.43, 0.27, 0.14, 0.14, 0.04, mc(20, 28, 20)),
         ]),
     'iron_golem': dict(
         name='Iron Golem', cost=300, hp=600, dmg=55, rng=1.8, speed=1.2, cd=1.4,
@@ -159,16 +180,23 @@ MOBS = {
             (-0.7, 1.5, 0, 0.3, 1.3, 0.34, mc(185, 190, 180)),
             (0.7, 1.5, 0, 0.3, 1.3, 0.34, mc(185, 190, 180)),
             (0, 2.4, 0, 0.55, 0.6, 0.62, mc(200, 203, 193)),
-            (0, 2.45, 0.3, 0.5, 0.16, 0.06, mc(150, 80, 90)),
+            (-0.14, 2.52, 0.31, 0.11, 0.14, 0.05, mc(40, 45, 48)),
+            (0.14, 2.52, 0.31, 0.11, 0.14, 0.05, mc(40, 45, 48)),
+            (0, 2.33, 0.33, 0.12, 0.36, 0.08, mc(150, 155, 145)),
         ]),
     'piglin': dict(
         name='Piglin Brute', cost=160, hp=180, dmg=34, rng=1.4, speed=2.6, cd=0.8,
         ranged=False, special=None, band_y=0.9, key='5',
         desc='Fast aggressive melee',
         parts=humanoid(mc(225, 150, 150), mc(90, 70, 60), mc(70, 55, 45),
-                       head=mc(230, 160, 155), arm_fwd=True)
+                       head=mc(230, 160, 155), arm_fwd=True,
+                       eyes=mc(60, 35, 35), nose=mc(215, 135, 135))
         + [(0.42, 1.2, 0.2, 0.1, 0.5, 0.1, mc(225, 200, 90)),
-           (0.42, 1.45, 0.2, 0.3, 0.12, 0.3, mc(225, 200, 90))]),
+           (0.42, 1.45, 0.2, 0.3, 0.12, 0.3, mc(225, 200, 90)),
+           (-0.07, 1.4, 0.36, 0.05, 0.06, 0.06, mc(60, 35, 35)),
+           (0.07, 1.4, 0.36, 0.05, 0.06, 0.06, mc(60, 35, 35)),
+           (-0.28, 1.62, 0, 0.1, 0.16, 0.16, mc(215, 135, 135)),
+           (0.28, 1.62, 0, 0.1, 0.16, 0.16, mc(215, 135, 135))]),
     'wolf': dict(
         name='Wolf', cost=60, hp=70, dmg=18, rng=1.2, speed=4.2, cd=0.6,
         ranged=False, special=None, band_y=0.55, key='6',
@@ -176,6 +204,9 @@ MOBS = {
         parts=[
             (0, 0.45, 0.1, 0.34, 0.4, 0.8, mc(210, 210, 215)),
             (0, 0.6, 0.55, 0.34, 0.36, 0.34, mc(225, 225, 230)),
+            (-0.09, 0.64, 0.72, 0.06, 0.07, 0.04, mc(30, 28, 30)),
+            (0.09, 0.64, 0.72, 0.06, 0.07, 0.04, mc(30, 28, 30)),
+            (0, 0.54, 0.73, 0.09, 0.08, 0.05, mc(20, 18, 20)),
             (0, 0.78, 0.62, 0.12, 0.18, 0.1, mc(210, 210, 215)),
             (-0.13, 0.78, 0.62, 0.1, 0.16, 0.08, mc(225, 225, 230)),
             (0.13, 0.78, 0.62, 0.1, 0.16, 0.08, mc(225, 225, 230)),
@@ -190,7 +221,9 @@ MOBS = {
         ranged=True, proj='arrow', special=None, band_y=0.9, key='7',
         desc='Crossbow ranged',
         parts=humanoid(mc(150, 160, 150), mc(75, 85, 80), mc(60, 65, 60),
-                       head=mc(150, 160, 150), arm_fwd=True)
+                       head=mc(150, 160, 150), arm_fwd=True,
+                       eyes=mc(35, 35, 38), nose=mc(140, 150, 140),
+                       brow=mc(60, 65, 60))
         + [(0, 1.0, 0.42, 0.5, 0.16, 0.1, mc(90, 65, 45)),
            (0, 1.0, 0.5, 0.1, 0.4, 0.08, mc(90, 65, 45))]),
 
@@ -260,8 +293,8 @@ MOBS = {
             (0, 1.4, 0, 0.34, 0.34, 0.34, mc(95, 175, 245)),
             (-0.12, 1.45, 0.18, 0.07, 0.08, 0.03, mc(20, 30, 60)),
             (0.12, 1.45, 0.18, 0.07, 0.08, 0.03, mc(20, 30, 60)),
-            (-0.34, 1.05, -0.1, 0.06, 0.5, 0.34, mca(180, 220, 255, 0.6)),
-            (0.34, 1.05, -0.1, 0.06, 0.5, 0.34, mca(180, 220, 255, 0.6)),
+            (-0.34, 1.05, -0.1, 0.06, 0.5, 0.34, mca(180, 220, 255, 0.6), 'wing_l'),
+            (0.34, 1.05, -0.1, 0.06, 0.5, 0.34, mca(180, 220, 255, 0.6), 'wing_r'),
         ]),
     'armadillo': dict(
         name='Armadillo', cost=150, hp=260, dmg=26, rng=1.3, speed=2.4, cd=0.9,
@@ -296,7 +329,7 @@ MOBS = {
         ranged=True, proj='poison', special='poison', band_y=0.9, key='Y',
         desc='NEWEST: poison arrows (damage over time)',
         parts=humanoid(mc(180, 200, 175), mc(150, 180, 150), mc(120, 150, 120),
-                       head=mc(160, 190, 160))
+                       head=mc(160, 190, 160), eyes=mc(30, 45, 30))
         + [(0, 1.7, 0, 0.5, 0.2, 0.5, mc(90, 150, 90)),
            (-0.18, 1.78, 0.1, 0.12, 0.2, 0.12, mc(110, 170, 110)),
            (0.2, 1.75, -0.1, 0.1, 0.18, 0.1, mc(110, 170, 110)),
@@ -312,6 +345,10 @@ MOBS = {
             (0, 0.46, 0.42, 0.42, 0.36, 0.42, mc(64, 50, 50)),
             (-0.12, 0.55, 0.64, 0.08, 0.08, 0.05, mc(225, 45, 45)),
             (0.12, 0.55, 0.64, 0.08, 0.08, 0.05, mc(225, 45, 45)),
+            (-0.2, 0.5, 0.62, 0.06, 0.06, 0.05, mc(200, 40, 40)),
+            (0.2, 0.5, 0.62, 0.06, 0.06, 0.05, mc(200, 40, 40)),
+            (-0.06, 0.36, 0.63, 0.05, 0.1, 0.05, mc(220, 220, 220)),
+            (0.06, 0.36, 0.63, 0.05, 0.1, 0.05, mc(220, 220, 220)),
             (-0.46, 0.3, 0.2, 0.5, 0.06, 0.06, mc(34, 26, 26), 'arm_l'),
             (0.46, 0.3, 0.2, 0.5, 0.06, 0.06, mc(34, 26, 26), 'arm_r'),
             (-0.46, 0.3, 0.0, 0.5, 0.06, 0.06, mc(34, 26, 26)),
@@ -392,7 +429,9 @@ MOBS = {
         ranged=False, special=None, band_y=0.9, key='V',
         desc='Axe-swinging berserker',
         parts=humanoid(mc(150, 150, 150), mc(60, 75, 70), mc(45, 50, 48),
-                       head=mc(160, 150, 140), arm_fwd=True)
+                       head=mc(160, 150, 140), arm_fwd=True,
+                       eyes=mc(35, 35, 38), nose=mc(150, 145, 135),
+                       brow=mc(45, 50, 48))
         + [(0.42, 1.0, 0.3, 0.1, 0.5, 0.1, mc(120, 90, 55)),
            (0.42, 1.4, 0.42, 0.3, 0.3, 0.06, mc(185, 190, 195))]),
     'wither_skeleton': dict(
@@ -400,17 +439,19 @@ MOBS = {
         ranged=False, special='wither', band_y=0.9, key='K',
         desc='Hits inflict WITHER rot',
         parts=humanoid(mc(40, 42, 40), mc(30, 32, 30), mc(25, 27, 25),
-                       head=mc(46, 48, 46), arm_fwd=True)
+                       head=mc(46, 48, 46), arm_fwd=True,
+                       eyes=mc(12, 12, 14))
         + [(0.42, 0.9, 0.25, 0.06, 0.75, 0.06, mc(60, 60, 66))]),
     'witch': dict(
         name='Witch', cost=220, hp=130, dmg=16, rng=10, speed=1.9, cd=1.4,
         ranged=True, proj='poison', special='poison', band_y=0.9, key='F',
         desc='Hurls splash poison potions',
         parts=humanoid(mc(110, 150, 110), mc(90, 60, 130), mc(60, 45, 90),
-                       head=mc(120, 160, 120))
+                       head=mc(120, 160, 120), eyes=mc(40, 30, 30),
+                       nose=mc(110, 150, 110))
         + [(0, 1.75, 0, 0.62, 0.1, 0.62, mc(40, 30, 60)),
            (0, 2.0, 0, 0.3, 0.5, 0.3, mc(50, 38, 72)),
-           (0, 1.4, 0.32, 0.08, 0.08, 0.18, mc(120, 160, 120))]),
+           (0, 1.32, 0.42, 0.06, 0.06, 0.06, mc(60, 90, 55))]),
     'guardian': dict(
         name='Guardian', cost=210, hp=160, dmg=30, rng=12, speed=1.6, cd=1.3,
         ranged=True, proj='laser', special=None, band_y=0.9, key='U', fly=0.8,
@@ -434,8 +475,8 @@ MOBS = {
             (0, 1.05, 0.45, 0.3, 0.24, 0.3, mc(80, 135, 135)),
             (-0.08, 1.1, 0.62, 0.06, 0.06, 0.04, mc(150, 255, 160)),
             (0.08, 1.1, 0.62, 0.06, 0.06, 0.04, mc(150, 255, 160)),
-            (-0.78, 1.0, 0, 0.9, 0.05, 0.5, mc(60, 110, 110)),
-            (0.78, 1.0, 0, 0.9, 0.05, 0.5, mc(60, 110, 110)),
+            (-0.78, 1.0, 0, 0.9, 0.05, 0.5, mc(60, 110, 110), 'wing_l'),
+            (0.78, 1.0, 0, 0.9, 0.05, 0.5, mc(60, 110, 110), 'wing_r'),
             (0, 0.95, -0.5, 0.1, 0.1, 0.4, mc(60, 110, 110)),
         ]),
     'ravager': dict(
@@ -627,6 +668,8 @@ class Unit(Entity):
         self.proj_h = cfg['band_y']
 
         self.walk_phase = random.uniform(0, math.tau)
+        self.breath_phase = random.uniform(0, math.tau)
+        self.attack_anim_t = 0.0       # >0 while an attack swing tween plays
         self.limbs = {}
         self.model_root = Entity(parent=self)
         self.model_root.scale = self.scale_mul
@@ -636,12 +679,32 @@ class Unit(Entity):
 
     def _build_model(self):
         for p in self.cfg['parts']:
-            e = Entity(parent=self.model_root, model='cube', color=p[6],
+            role = p[7] if len(p) > 7 and p[7] else None
+            if role:
+                # Limb/wing: hang the cube from a pivot Entity placed at the
+                # JOINT so it rotates like a real shoulder/hip/wing-root.
+                px, py, pz, sx, sy, sz = p[0], p[1], p[2], p[3], p[4], p[5]
+                if role.startswith('wing'):
+                    # wings hinge on their inner (body-side) edge
+                    inner = -sx / 2 if role == 'wing_l' else sx / 2
+                    pivot = Entity(parent=self.model_root,
+                                   position=(px - inner, py, pz))
+                    cube = Entity(parent=pivot, model='cube', color=p[6],
+                                  position=(inner, 0, 0), scale=(sx, sy, sz))
+                    pivot.axis = 'z'
+                else:
+                    # arms/legs hinge at their TOP (the shoulder/hip)
+                    top = py + sy / 2
+                    pivot = Entity(parent=self.model_root,
+                                   position=(px, top, pz))
+                    cube = Entity(parent=pivot, model='cube', color=p[6],
+                                  position=(0, -sy / 2, 0), scale=(sx, sy, sz))
+                    pivot.axis = 'x'
+                pivot.base_z = pz
+                self.limbs[role] = pivot
+            else:
+                Entity(parent=self.model_root, model='cube', color=p[6],
                        position=(p[0], p[1], p[2]), scale=(p[3], p[4], p[5]))
-            # Parts tagged with a limb role (8th element) are animated.
-            if len(p) > 7 and p[7]:
-                e.base_z = p[2]
-                self.limbs[p[7]] = e
         # team band around chest
         by = self.cfg['band_y']
         Entity(parent=self.model_root, model='cube', color=TEAM_COLOR[self.team],
@@ -659,6 +722,13 @@ class Unit(Entity):
         amount *= (1 - self.armor)
         self.hp -= amount
         self.model_root.blink(color.red, duration=0.12)
+        # hit reaction: a quick squash-stretch (skip mid-explode/roll so we
+        # don't fight those scale animations).
+        if self.special not in ('explode', 'roll'):
+            base = self.scale_mul
+            self.model_root.animate_scale(
+                (base * 1.16, base * 0.84, base * 1.16), duration=0.06)
+            self.model_root.animate_scale(base, duration=0.14, delay=0.06)
         if self.hp <= 0:
             self.die()
 
@@ -702,8 +772,15 @@ class Unit(Entity):
             burst((self.x, 1, self.z), mc(110, 210, 110), 12, 4)
         burst((self.x, 1, self.z), self.cfg['parts'][0][6], 16, 4)
         play_sfx('death', 0.3)
-        self.model_root.animate_rotation((90, self.model_root.rotation_y, 0),
-                                         duration=0.4, curve=curve.out_bounce)
+        if self.special == 'split' or self.kind == 'slime_small':
+            # slimes splat flat instead of toppling over
+            self.model_root.animate_scale(
+                (self.scale_mul * 1.8, self.scale_mul * 0.15,
+                 self.scale_mul * 1.8), duration=0.3, curve=curve.out_expo)
+        else:
+            self.model_root.animate_rotation(
+                (90, self.model_root.rotation_y, 0),
+                duration=0.4, curve=curve.out_bounce)
         for c in self.model_root.children:
             c.fade_out(duration=1.0, delay=0.4)
         if self in units:
@@ -751,6 +828,8 @@ class Unit(Entity):
     def think(self, dt):
         if not self.alive:
             return
+        if self.attack_anim_t > 0:
+            self.attack_anim_t -= dt
         if self.poison_t > 0:
             self.poison_t -= dt
             self.hp -= self.poison_dps * dt
@@ -839,13 +918,35 @@ class Unit(Entity):
                 self.atk_timer = self.cd
 
     def _animate_limbs(self, amount):
-        """Swing tagged arms/legs back and forth (marching motion)."""
+        """Rotate tagged arms/legs at the joint for a real walk cycle.
+        Wings flap continuously regardless of walk amount."""
         if not self.limbs:
             return
-        s = math.sin(self.walk_phase) * 0.22 * amount
-        for name, e in self.limbs.items():
-            sign = 1 if name in ('leg_l', 'arm_r') else -1
-            e.z = e.base_z + s * sign
+        swing = math.sin(self.walk_phase) * 38 * amount   # degrees
+        flap = math.sin(time.time() * 9) * 26             # wing flap degrees
+        for name, pv in self.limbs.items():
+            if name.startswith('wing'):
+                sign = 1 if name == 'wing_l' else -1
+                pv.rotation_z = flap * sign
+            else:
+                # arms are skipped while an attack swing tween is playing
+                if name.startswith('arm') and self.attack_anim_t > 0:
+                    continue
+                sign = 1 if name in ('leg_l', 'arm_r') else -1
+                pv.rotation_x = swing * sign
+
+    def idle(self, dt):
+        """Gentle setup-screen animation: breathing, hovering, wing flap."""
+        if not self.alive:
+            return
+        self.breath_phase += dt * 2.0
+        b = math.sin(self.breath_phase)
+        if self.fly:
+            self.model_root.y = b * 0.18
+        else:
+            self.model_root.y = abs(b) * 0.03
+        # flap wings / sway limbs softly so they look alive while waiting
+        self._animate_limbs(0.22)
 
     def _separation(self):
         push = Vec3(0, 0, 0)
@@ -859,18 +960,31 @@ class Unit(Entity):
         return push * 1.5
 
     def _attack(self, tgt, to):
-        # lunge
+        # lunge the whole body forward briefly
         self.model_root.animate_position(
             Vec3(0, self.model_root.y, 0.25), duration=0.08,
             curve=curve.out_expo)
         self.model_root.animate_position(
             Vec3(0, self.model_root.y, 0), duration=0.12, delay=0.08)
-        # thrust the arms forward for a melee swing
-        for nm in ('arm_l', 'arm_r'):
-            e = self.limbs.get(nm)
-            if e:
-                e.animate_z(e.base_z + 0.35, duration=0.08, curve=curve.out_expo)
-                e.animate_z(e.base_z, duration=0.14, delay=0.08)
+        # swing the arms at the shoulder joint
+        self.attack_anim_t = 0.34
+        arm = self.limbs.get('arm_r') or self.limbs.get('arm_l')
+        if arm:
+            if self.ranged:
+                # bow/cast draw: pull arm back then release
+                arm.rotation_x = -65
+                arm.animate('rotation_x', 0, duration=0.26,
+                            curve=curve.out_expo)
+            else:
+                # overhead chop: raise high, slam down, recover
+                arm.rotation_x = -120
+                arm.animate('rotation_x', 35, duration=0.12,
+                            curve=curve.in_expo)
+                arm.animate('rotation_x', 0, duration=0.16, delay=0.12)
+            other = self.limbs.get('arm_l') if arm is self.limbs.get('arm_r') \
+                else self.limbs.get('arm_r')
+            if other:
+                other.animate('rotation_x', 0, duration=0.2)
         if self.ranged:
             Projectile(self, tgt, self.proj_kind)
             if self.proj_kind != 'sonic':
@@ -887,8 +1001,9 @@ class Unit(Entity):
 
     def _support(self, dt):
         ally = self.nearest_wounded_ally()
-        # gentle hovering
+        # gentle hovering + wing flap
         self.model_root.y = math.sin(time.time() * 3) * 0.15
+        self._animate_limbs(0.3)
         if not ally:
             # drift toward team's center mass
             cx = sum(u.x for u in units if u.team == self.team and u.alive)
@@ -1269,6 +1384,10 @@ class Game:
                 pr.step(dt)
             self.check_winner()
             self.refresh_hud()
+        else:
+            # idle breathing/hover on the setup screen so units look alive
+            for u in list(units):
+                u.idle(dt)
 
     def input(self, key):
         # While the help overlay is open, keys just close it (clicks are
